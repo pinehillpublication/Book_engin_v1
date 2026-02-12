@@ -1,8 +1,8 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 from pydantic import BaseModel
 import uuid
+import threading
 from queue_manager import add_job, process_queue
-from config import OUTPUT_DIR
 
 app = FastAPI()
 
@@ -12,7 +12,7 @@ class BookRequest(BaseModel):
     pages: int
 
 @app.post("/generate-book")
-def generate_book(request: BookRequest, background_tasks: BackgroundTasks):
+def generate_book(request: BookRequest):
     job_id = str(uuid.uuid4())
 
     job = {
@@ -25,6 +25,9 @@ def generate_book(request: BookRequest, background_tasks: BackgroundTasks):
     }
 
     add_job(job)
-    background_tasks.add_task(process_queue)
+
+    # 👇 Background thread start
+    thread = threading.Thread(target=process_queue)
+    thread.start()
 
     return {"message": "Book generation started", "job_id": job_id}
