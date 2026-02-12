@@ -1,4 +1,5 @@
 import requests
+import traceback
 from config import DEEPSEEK_API_KEY
 
 def write_text(prompt):
@@ -13,10 +14,32 @@ def write_text(prompt):
         "model": "deepseek-chat",
         "messages": [
             {"role": "user", "content": prompt}
-        ]
+        ],
+        "temperature": 0.7
     }
 
-    response = requests.post(url, headers=headers, json=payload)
+    try:
+        print("Calling DeepSeek API...", flush=True)
 
-    return response.json()["choices"][0]["message"]["content"]
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=60   # 🔥 Important
+        )
+
+        print(f"API Status Code: {response.status_code}", flush=True)
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        return data["choices"][0]["message"]["content"]
+
+    except Exception as e:
+        print("DeepSeek API ERROR:", flush=True)
+        traceback.print_exc()
+        raise e
+
+
 
